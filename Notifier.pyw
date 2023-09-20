@@ -2,8 +2,13 @@ import requests
 import json
 import os, sys
 import datetime
-import winrt.windows.ui.notifications as notifications
-import winrt.windows.data.xml.dom as dom
+from winrt.windows.ui import notifications
+from winrt.windows.data.xml import dom
+
+if getattr(sys, 'frozen', False):
+    appPath = r"C:\Users\User\source\repos\Automation\Epic_free_games_notifier"
+else:
+    appPath = os.path.dirname(os.path.abspath(__file__))
 
 def getResponse() -> dict:
 	url = 'https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=en-US&country=CZ&allowCountries=CZ'
@@ -42,7 +47,7 @@ def getThumbnailUrl(game):
 			return img["url"]
 def downloadThumbnail(url):
 	res = requests.get(url)
-	with open("Thumbnails\\" + thumbnailName(url), 'wb') as f:
+	with open(os.path.join(appPath, "Thumbnails", thumbnailName(url)), 'wb') as f:
 		f.write(res.content)
 def spawnNotification(game, thumbnailUrl):
 	notifier = notifications.ToastNotificationManager.create_toast_notifier(sys.executable)
@@ -50,10 +55,9 @@ def spawnNotification(game, thumbnailUrl):
 	<toast>
 		<visual>
 			<binding template='ToastGeneric'>
-				<text>New free Epic Game: {game["title"]}</text>
+				<text>{game["title"]}</text>
 				<text hint-maxLines='2'>{game["description"]}</text>
-				<image placement='appLogoOverride' src="file:///{os.getcwd()}/epic-games-icon.ico"/>
-				<image src="file:///{os.getcwd()}/Thumbnails/{thumbnailName(thumbnailUrl)}"/>
+				<image src="file:///{appPath}/Thumbnails/{thumbnailName(thumbnailUrl)}"/>
 			</binding>
 		</visual>
 	</toast>
