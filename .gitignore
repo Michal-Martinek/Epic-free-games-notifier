@@ -1,2 +1,8 @@
 Thumbnails
+command.txt
+__pycache__
+
 *.exe
+dist
+build
+*.spec
