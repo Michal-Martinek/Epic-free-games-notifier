@@ -3,12 +3,18 @@ import json
 import os, sys
 import datetime
 from typing import Optional
-from winrt.windows.ui import notifications
-from winrt.windows.data.xml import dom
+# from winrt.windows.ui.notifications import ToastNotificationManager
+# from winrt.windows.ui import notifications
+# import winrt.windows.ui
+# print(dir(winrt.windows))
+# from winrt.windows.data.xml import dom
 from xml.sax import saxutils
 
+from win10toast_click import ToastNotifier
+
+
 if getattr(sys, 'frozen', False):
-    appPath = r"C:\Users\User\source\repos\Automation\Epic_free_games_notifier"
+    appPath = r"C:\...\Epic_free_games_notifier"
 else:
     appPath = os.path.dirname(os.path.abspath(__file__))
 
@@ -49,12 +55,25 @@ def getThumbnailUrl(game) -> Optional[str]:
 	if not imgs: return None
 	img = min(imgs, key=lambda i: i["type"])
 	return img['url']
-def downloadThumbnail(url):
+def downloadThumbnail(url) -> str:
 	res = requests.get(url)
-	with open(os.path.join(appPath, "Thumbnails", thumbnailName(url)), 'wb') as f:
-		f.write(res.content)
-def spawnNotification(game, thumbnailUrl):
-	notifier = notifications.ToastNotificationManager.create_toast_notifier(sys.executable)
+	path = os.path.join(appPath, "Thumbnails", thumbnailName(url))
+	return path
+	# with open(path, 'wb') as f:
+	# 	f.write(res.content)
+	# return path
+def spawnNotification(game, thumbnailUrl, path: str):
+	ToastNotifier().show_toast(
+		f'Epic game: {saxutils.escape(game["title"])}',
+		f'{saxutils.escape(game["description"])}',
+		# icon_path=os.path.abspath(path)
+		icon_path='epic-games-icon.ico',
+		duration=30
+	)
+	#... , icon_path='24sever.ico', callback_on_click=lambda: notificationCallback(event))
+	return
+	# winrt.windows.ui.notifications.ToastNotificationManager.create_toast_notifier(sys.executable)
+	notifier = ToastNotificationManager.create_toast_notifier(sys.executable)
 	thumbnailXml = f'<image src="file:///{appPath}/Thumbnails/{thumbnailName(thumbnailUrl)}"/>' if thumbnailUrl else ''
 	tString = f"""
 	<toast>
@@ -67,6 +86,7 @@ def spawnNotification(game, thumbnailUrl):
 		</visual>
 	</toast>
 	"""
+
 	xDoc = dom.XmlDocument()
 	xDoc.load_xml(tString)
 	notification = notifications.ToastNotification(xDoc)
@@ -74,8 +94,9 @@ def spawnNotification(game, thumbnailUrl):
 def reportFree(games):
 	for game in games:
 		url = getThumbnailUrl(game)
-		if url: downloadThumbnail(url)
-		spawnNotification(game, url)
+		if url:
+			path = downloadThumbnail(url)
+		spawnNotification(game, url, path)
 
 def main():
 	games = getFreeGames()
